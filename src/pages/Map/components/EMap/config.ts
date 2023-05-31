@@ -1,5 +1,5 @@
 export const chinaMapConfig = (configData: any) => {
-  const { data, max, min } = configData;
+  const { data, max } = configData;
 
   return {
     title: {
