@@ -1,0 +1,47 @@
+.popoverWrapper {
+  .item {
+    display: flex;
+    font-size: 12px;
+    font-weight: 400;
+    min-width: 250px;
+
+    // 第一个子
+    .label {
+      width: 100px;
+      line-height: 18px;
+      color: rgba(112, 127, 153, 100%);
+    }
+
+    // 第二个子
+    &.value {
+      flex: 1;
+      line-height: 18px;
+      color: rgba(24, 24, 24, 100%);
+    }
+  }
+}
+
+.listWrapper {
+  .listBox {
+    padding-top: 14px;
+
+    // 隐藏滚动条
+    .ant-table-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    .listItem {
+      padding: 8px 12px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(229, 238, 255, 1);
+      }
+
+      &.active {
+        background-color: rgba(229, 238, 255, 1);
+      }
+
+    }
+  }
+}

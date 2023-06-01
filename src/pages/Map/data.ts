@@ -1,35 +1,28 @@
-export const mapData: any = [
+import { TMapData, TNodePanel } from './type';
+
+export const mapData: TMapData[] = [
   {
     name: '北京',
     value: 2,
     nodeInfo: [
       {
-        name: '东城区节点1',
-        value: 0,
-        flow: 123,
-      },
-      {
-        name: '东城区节点2',
-        value: 1,
-        flow: 123,
+        title: 'beijing-01',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '北京-东城区-节点1',
+        ipV4: '121.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.9,
+        coords: [116.405285, 39.904989],
       },
     ],
   },
   {
     name: '天津',
     value: Math.round(Math.random() * 1000),
-    nodeInfo: [
-      {
-        name: '河东区节点1',
-        value: 1,
-        flow: 223,
-      },
-      {
-        name: '河东区节点2',
-        value: 1,
-        flow: 223,
-      },
-    ],
+    nodeInfo: [],
   },
   {
     name: '上海',
@@ -79,7 +72,44 @@ export const mapData: any = [
   {
     name: '山东',
     value: Math.round(Math.random() * 1000),
-    nodeInfo: [],
+    nodeInfo: [
+      {
+        title: 'qigndao-01',
+        state: 0,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '青岛节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.4,
+        coords: [121.385877, 37.540925],
+      },
+      {
+        title: 'jinan-01',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '济南节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [117.000923, 36.675807],
+      },
+      {
+        title: 'jinan-02',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '济南节点2',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [116.947921, 36.668205],
+      },
+    ],
   },
   {
     name: '新疆',
@@ -104,7 +134,32 @@ export const mapData: any = [
   {
     name: '湖北',
     value: Math.round(Math.random() * 1000),
-    nodeInfo: [],
+    nodeInfo: [
+      {
+        title: 'wuhan-01',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '武汉节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [114.298572, 30.584355],
+      },
+      {
+        title: 'wuhan-02',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '武汉节点2',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [114.298572, 30.584355],
+      },
+    ],
   },
   {
     name: '广西',
@@ -164,7 +219,56 @@ export const mapData: any = [
   {
     name: '四川',
     value: Math.round(Math.random() * 1000),
-    nodeInfo: [],
+    nodeInfo: [
+      {
+        title: 'sichuan-01',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '四川节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [104.065735, 30.659462],
+      },
+      {
+        title: 'sichuan-02',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '四川节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [104.065735, 30.659462],
+      },
+      {
+        title: 'sichuan-03',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '四川节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [104.065735, 30.659462],
+      },
+      {
+        title: 'sichuan-04',
+        state: 1,
+        bandwidth: 123,
+        maxBandwidth: 123,
+        name: '四川节点1',
+        ipV4: '120.220.211.123',
+        ipV6: '2402:4e00:1013:e500:0:9671:f018:4947',
+        roomBandwidth: 123,
+        bandwidthShare: 0.6,
+        coords: [104.065735, 30.659462],
+      },
+    ],
   },
   {
     name: '宁夏',
@@ -245,3 +349,51 @@ export const chinaGeoCoordMap = {
   海南: [110.3893, 19.8516],
   上海: [121.4648, 31.2891],
 };
+
+// 覆盖区域的节点 - 区域带宽
+export const PROVINCE_PANELS: TNodePanel[] = [
+  {
+    name: 'wx-01',
+    value: 2341.23,
+  },
+  {
+    name: 'hangzhou',
+    value: 120.2,
+  },
+  {
+    name: 'fj-01',
+    value: 20.34,
+  },
+  {
+    name: 'wuyuan-01',
+    value: 0.0,
+  },
+];
+
+// 覆盖地区名称 - 地区在该节点带宽
+export const NODE_PANELS: TNodePanel[] = [
+  {
+    name: '山东',
+    value: 2341.34,
+  },
+  {
+    name: '安徽',
+    value: 120.21,
+  },
+  {
+    name: '河北',
+    value: 20.0,
+  },
+  {
+    name: '河南',
+    value: 0.0,
+  },
+  {
+    name: '云南',
+    value: 0.0,
+  },
+  {
+    name: '黑龙江',
+    value: 0.0,
+  },
+];

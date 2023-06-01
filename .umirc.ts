@@ -41,6 +41,7 @@ export default defineConfig({
       path: '/map',
       icon: 'ApiOutlined',
       component: './Map',
+      menuRender: false,
     },
   ],
   npmClient: 'pnpm',

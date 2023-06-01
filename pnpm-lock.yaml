@@ -10,6 +10,7 @@ specifiers:
   '@types/react': ^18.0.33
   '@types/react-dom': ^18.0.11
   '@umijs/max': ^4.0.68
+  ahooks: ^3.7.7
   antd: ^5.4.0
   classnames: ^2.3.2
   echarts: ^5.4.2
@@ -29,6 +30,7 @@ dependencies:
   '@antv/larkmap': 1.3.7_@antv+l7@2.15.5
   '@juggle/resize-observer': 3.4.0
   '@umijs/max': 4.0.68_hszyqnjksiftc6nqlymosq766a
+  ahooks: 3.7.7
   antd: 5.4.7
   classnames: 2.3.2
   echarts: 5.4.2
