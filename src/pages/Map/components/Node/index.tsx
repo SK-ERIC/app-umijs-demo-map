@@ -1,10 +1,11 @@
 import {
+  useClickAway,
   useDebounceEffect,
   useDebounceFn,
   useHover,
   useUpdateEffect,
 } from 'ahooks';
-import { Divider, Input, List, Popover, message } from 'antd';
+import { Divider, Input, List, Popover } from 'antd';
 import classNames from 'classnames';
 import { useRef, useState } from 'react';
 import { searchNodeInfo, sortNodeData2 } from '../../helper';
@@ -91,10 +92,15 @@ const Node: React.FC<{
   );
 
   useUpdateEffect(() => {
-    if (!isHoverList && hoverItem) {
+    if (!isHoverList) {
       setHoverItem('');
     }
   }, [isHoverList]);
+
+  useClickAway(() => {
+    setClickItem('');
+    setHoverItem('');
+  }, liseRef);
 
   // 搜索节点名称、IP 地址
   const onSearch = (value: string) => {
@@ -107,8 +113,7 @@ const Node: React.FC<{
 
   const { run: setHoverFunc } = useDebounceFn(
     (item: TNodeInfo) => {
-      setHoverItem(item.title);
-      message.info('悬浮的节点：' + item.title);
+      isHoverList && setHoverItem(item.title);
     },
     {
       wait: 200,
@@ -132,57 +137,58 @@ const Node: React.FC<{
       />
 
       <div
-        ref={liseRef}
         className={styles.listWrapper}
         style={{
           height: ContainerHeight,
           overflow: 'auto',
         }}
       >
-        <List
-          className={styles.listBox}
-          itemLayout="horizontal"
-          dataSource={nodeList}
-          renderItem={(item, index) => (
-            <Popover
-              key={index}
-              placement="right"
-              title={item.title}
-              content={<PopoverContent node={item} />}
-              trigger="hover"
-            >
-              <List.Item
-                className={classNames(styles.listItem, {
-                  [styles.active]: clickItem === item.title,
-                })}
-                onClick={() => handleItemClick(item)}
-                onMouseEnter={() => handleHoverItem(item)}
+        <div ref={liseRef}>
+          <List
+            className={styles.listBox}
+            itemLayout="horizontal"
+            dataSource={nodeList}
+            renderItem={(item, index) => (
+              <Popover
+                key={index + item.title}
+                placement="right"
+                title={item.title}
+                content={<PopoverContent node={item} />}
+                trigger="hover"
               >
-                <List.Item.Meta title={item.title} />
-                {item.state === 0 ? (
-                  <div
-                    style={{
-                      color: 'red',
-                    }}
-                  >
-                    已停用，待开启
-                  </div>
-                ) : (
-                  <div>
-                    带宽：
-                    <span
+                <List.Item
+                  className={classNames(styles.listItem, {
+                    [styles.active]: clickItem === item.title,
+                  })}
+                  onClick={() => handleItemClick(item)}
+                  onMouseEnter={() => handleHoverItem(item)}
+                >
+                  <List.Item.Meta title={item.title} />
+                  {item.state === 0 ? (
+                    <div
                       style={{
-                        color: item.bandwidthShare >= 0.9 ? 'red' : 'inherit',
+                        color: 'red',
                       }}
                     >
-                      {item.bandwidthShare * 100}%
-                    </span>
-                  </div>
-                )}
-              </List.Item>
-            </Popover>
-          )}
-        />
+                      已停用，待开启
+                    </div>
+                  ) : (
+                    <div>
+                      带宽：
+                      <span
+                        style={{
+                          color: item.bandwidthShare >= 0.9 ? 'red' : 'inherit',
+                        }}
+                      >
+                        {item.bandwidthShare * 100}%
+                      </span>
+                    </div>
+                  )}
+                </List.Item>
+              </Popover>
+            )}
+          />
+        </div>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useUpdate } from 'ahooks';
-import { Alert, Button, message } from 'antd';
+import { Button, message } from 'antd';
+import { uniqWith } from 'lodash-es';
 import React, { useEffect, useState } from 'react';
 import EMap from './components/EMap';
 import Node from './components/Node';
@@ -27,7 +28,7 @@ const Map: React.FC = () => {
     setMapList(mapData);
     // 取出数据中所有的节点数据，
     const nodeData = mapData.reduce((acc: TNodeInfo[], node: TMapData) => {
-      return acc.concat(node.nodeInfo);
+      return uniqWith(acc.concat(node.nodeInfo), (a, b) => a.title === b.title);
     }, []);
     // 根据排序规则排序
     const list = sortNodeData2(nodeData);
@@ -61,7 +62,7 @@ const Map: React.FC = () => {
           />
         </ProCard>
         <ProCard bordered>
-          <Alert
+          {/* <Alert
             message={
               <>
                 白色区域，为当前灵境云节点未覆盖地区
@@ -72,7 +73,7 @@ const Map: React.FC = () => {
             }
             type="warning"
             closable
-          />
+          /> */}
           <div
             style={{
               height: ContainerHeight,

@@ -28,6 +28,8 @@ export type TNodeInfo = {
   bandwidthShare: number;
   // 节点坐标
   coords: [number, number];
+  // 覆盖的区域
+  coverArea: string[];
 }
 
 
@@ -36,4 +38,5 @@ export type TMapData = {
   name: string;
   value: number;
   nodeInfo: TNodeInfo[];
+  [key: string]: any;
 }

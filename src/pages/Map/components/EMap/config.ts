@@ -1,112 +1,62 @@
-export const chinaMapConfig = (configData: any) => {
-  const { data, max } = configData;
+// 颜色常量
+export const COLOR = {
+  // 区域颜色，区域所有节点不可用
+  AREA_DISABLE: '#efa0bc',
+  // 区域颜色，未覆盖、区域无节点
+  AREA_NO_COVER: '#dff0fb',
+  // 区域颜色，区域有节点，有节点可用
+  AREA_ENABLE: '#2bbaed',
+  // 节点颜色，节点不可用
+  NODE_DISABLE: '#f73841',
+  // 节点颜色，节点可用
+  NODE_ENABLE: '#00ff00',
+};
 
-  return {
-    title: {
-      // 标题组件
-      text: '数据地图',
-      // subtext: '数据来源于 xx平台',
-      // sublink: 'http://www.census.gov/popest/data/datasets.html',
-      left: 'right',
-      textStyle: {
-        color: '#000',
+export const DEFAULT_OPTION = {
+  tooltip: {
+    trigger: 'item',
+  },
+  visualMap: {
+    type: 'piecewise',
+    left: 10,
+    bottom: 10,
+    pieces: [
+      {
+        min: 0,
+        max: 0,
+        label: '无机房',
+        color: COLOR.AREA_NO_COVER,
       },
+      {
+        start: 1,
+        end: 1,
+        label: '有机房，且有节点可用',
+        color: COLOR.AREA_ENABLE,
+      },
+      {
+        start: 2,
+        end: 2,
+        label: '有机房，但所有节点不可用',
+        color: COLOR.AREA_DISABLE,
+      },
+      {
+        start: 3,
+        end: 3,
+        label: '节点可用',
+        color: COLOR.NODE_ENABLE,
+      },
+      {
+        start: 4,
+        end: 4,
+        label: '节点不可用',
+        color: COLOR.NODE_DISABLE,
+      },
+    ],
+  },
+  toolbox: {
+    show: true,
+    feature: {
+      saveAsImage: {},
     },
-    tooltip: {
-      // 提示框
-      trigger: 'item',
-      showDelay: 0,
-      transitionDuration: 0.2,
-      formatter: function (params: any) {
-        let { data = {} } = params;
-        let { value = 0 } = data;
-        return `${params.name}<br/>
-                  个数: ${value}`;
-      },
-    },
-    visualMap: {
-      // 视觉映射组件
-      type: 'continuous',
-      left: 'right',
-      min: 0,
-      max: max,
-      inRange: {
-        color: [
-          '#e5f7ff',
-          '#096dd9',
-          // "#fedeb5",
-          // "#f96a35",
-          // "#c3380e",
-          // "#942005"
-          // '#5b1305'
-        ],
-      },
-      text: [`最大值：${max}`, 0],
-      textStyle: {
-        color: '#000',
-      },
-      // calculable: true
-    },
-    toolbox: {
-      // 工具导航
-      show: true,
-      left: 'left',
-      top: 'top',
-      feature: {
-        // dataView: { readOnly: false },
-        restore: {},
-        saveAsImage: {},
-      },
-    },
-    dataset: {
-      source: data,
-    },
-    series: {
-      // 地图,可以是数组，多个
-      label: {
-        show: true, //显示省市名称
-        position: [1, 100], // 相对的百分比
-        fontSize: 12,
-        offset: [2, 0],
-        align: 'left',
-      },
-      itemStyle: {
-        areaColor: '#fff', // 地图图形颜色
-      },
-      type: 'map',
-      roam: true,
-      map: 'china',
-      zoom: 1.2, // 当前视角的缩放比例
-      scaleLimit: {
-        max: 2,
-        min: 1, // 设置默认缩放效果
-      },
-      top: '10%', // 距离顶部距离
-
-      // data: [
-      //   { name: "内蒙古", value: 1000 },
-      //   { name: "北京", value: 700 },
-      //   { name: "河北", value: 30 },
-      //   { name: "江苏", value: 400 },
-      //   { name: "西藏", value: 200 }
-      // ],
-
-      // nameMap:{
-      //     '内蒙古':'NeiMengGu',
-      //     '北京':'Beijing',
-      // },
-
-      // nameMap: {
-      //   110000: "北京",
-      //   130000: "河北",
-      //   150000: "内蒙古"
-      // },
-      // nameProperty: "adcode",
-      // data: [
-      //   { name: "内蒙古", value: 1000 },
-      //   { name: "北京", value: 700 },
-      //   { name: "河北", value: 30 }
-      // ]
-    },
-  };
+  },
 };

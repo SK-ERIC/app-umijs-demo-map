@@ -7,6 +7,7 @@ specifiers:
   '@antv/l7': ^2.15.5
   '@antv/larkmap': ^1.3.7
   '@juggle/resize-observer': ^3.4.0
+  '@types/lodash-es': ^4.17.7
   '@types/react': ^18.0.33
   '@types/react-dom': ^18.0.11
   '@umijs/max': ^4.0.68
@@ -16,6 +17,7 @@ specifiers:
   echarts: ^5.4.2
   husky: ^8.0.3
   lint-staged: ^13.2.0
+  lodash-es: ^4.17.21
   numeral: ^2.0.6
   prettier: ^2.8.7
   prettier-plugin-organize-imports: ^3.2.2
@@ -34,9 +36,11 @@ dependencies:
   antd: 5.4.7
   classnames: 2.3.2
   echarts: 5.4.2
+  lodash-es: 4.17.21
   numeral: 2.0.6
 
 devDependencies:
+  '@types/lodash-es': 4.17.7
   '@types/react': 18.2.6
   '@types/react-dom': 18.2.4
   husky: 8.0.3
@@ -5441,6 +5445,16 @@ packages:
   /@types/json-schema/7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
     dev: false
+
+  /@types/lodash-es/4.17.7:
+    resolution: {integrity: sha512-z0ptr6UI10VlU6l5MYhGwS4mC8DZyYer2mCoyysZtSF7p26zOX8UpbrV0YpNYLGS8K4PUFIyEr62IMFFjveSiQ==}
+    dependencies:
+      '@types/lodash': 4.14.195
+    dev: true
+
+  /@types/lodash/4.14.195:
+    resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
+    dev: true
 
   /@types/mapbox-gl/1.13.6:
     resolution: {integrity: sha512-CONmQCVgzLOseiDa0s8EXwgc3z9FQcc8U/KsIBiaNBY1sIxPen14k9z3eMeYgpx1vo7k0cq9xxxk3/xSZkW0TQ==}
