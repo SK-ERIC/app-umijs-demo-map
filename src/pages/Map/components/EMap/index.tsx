@@ -179,6 +179,28 @@ const getGeoJson = async (adcode = 100000) => {
 // 处理节点数据根据节点数据，得到地理数据
 const getMapData = (edgeRooms: EdgeRoom[]) => {
   console.log('edgeRooms :>> ', edgeRooms);
+
+  const map = new Map();
+
+  edgeRooms.forEach((edgeRoom) => {
+    const { lines } = edgeRoom;
+
+    lines.forEach(line => {
+
+      if (map.has(line)) {
+        const value = map.get(line);
+        map.set(line, [...value, edgeRoom]);
+      } else {
+        map.set(line, [edgeRoom]);
+      }
+    })
+  })
+
+  console.log('map :>> ', map.entries());
+
+
+
+
   // 数据分组 以 lineName 为 key
   // const groupByLineName = groupBy(edgeRooms, 'lineName');
   // const mapData = Object.keys(groupByLineName).map((lineName) => {
