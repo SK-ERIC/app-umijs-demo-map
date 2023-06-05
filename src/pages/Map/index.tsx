@@ -1,18 +1,16 @@
+import { EdgeRoomProvider } from '@/contexts';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useUpdate } from 'ahooks';
 import { Button, message } from 'antd';
-import { uniqWith } from 'lodash-es';
 import React, { useEffect, useState } from 'react';
 import EMap from './components/EMap';
 import Node from './components/Node';
 import { mapData } from './data';
-import { sortNodeData2 } from './helper';
+import { EdgeRoom, EdgeRoomService } from './edgeRoom';
 import { TMapData, TNodeInfo } from './type';
 
 // 中国节点地图
 const Map: React.FC = () => {
-  const ContainerHeight = 600;
-
   const update = useUpdate();
 
   const [mapList, setMapList] = useState<TMapData[]>(mapData);
@@ -23,46 +21,63 @@ const Map: React.FC = () => {
   const [clickItem, setClickItem] = useState('');
   const [hoverItem, setHoverItem] = useState('');
 
+  //
+  //
+  const [edgeRooms, setEdgeRooms] = useState<EdgeRoom[]>([]);
+  const [activeEdgeRoom, setActiveEdgeRoom] = useState<EdgeRoom | null>(null);
+  //
+  //
+
+  // 获取节点数据
+  const getEdgeRooms = async () => {
+    const data = await EdgeRoomService.GetEdgeRooms();
+    setEdgeRooms(data);
+    console.log('data :>> ', data);
+  };
+
   useEffect(() => {
     // TODO: 暂取模拟数据
-    setMapList(mapData);
-    // 取出数据中所有的节点数据，
-    const nodeData = mapData.reduce((acc: TNodeInfo[], node: TMapData) => {
-      return uniqWith(acc.concat(node.nodeInfo), (a, b) => a.title === b.title);
-    }, []);
-    // 根据排序规则排序
-    const list = sortNodeData2(nodeData);
-    setNodeList(list);
-    nodeRef.current = list;
-    message.info('数据加载成功');
+    getEdgeRooms();
+
+    // setMapList(mapData);
+    // // 取出数据中所有的节点数据，
+    // const nodeData = mapData.reduce((acc: TNodeInfo[], node: TMapData) => {
+    //   return uniqWith(acc.concat(node.nodeInfo), (a, b) => a.title === b.title);
+    // }, []);
+    // // 根据排序规则排序
+    // const list = sortNodeData2(nodeData);
+    // setNodeList(list);
+    // nodeRef.current = list;
+    // message.info('数据加载成功');
   }, []);
 
   const refresh = () => {
     update();
+    getEdgeRooms();
     setClickItem('');
     setHoverItem('');
     message.success('刷新成功');
   };
 
   return (
-    <PageContainer
-      title={'节点分布与覆盖预览'}
-      extra={<Button onClick={refresh}>刷新</Button>}
+    <EdgeRoomProvider
+      value={{
+        edgeRooms,
+        setEdgeRooms,
+        activeEdgeRoom,
+        setActiveEdgeRoom,
+      }}
     >
-      <ProCard direction="row" ghost gutter={[10, 8]}>
-        <ProCard colSpan={5} bordered>
-          <Node
-            nodeList={nodeList}
-            setNodeList={setNodeList}
-            clickItem={clickItem}
-            setClickItem={setClickItem}
-            hoverItem={hoverItem}
-            setHoverItem={setHoverItem}
-            nodeRef={nodeRef}
-          />
-        </ProCard>
-        <ProCard bordered>
-          {/* <Alert
+      <PageContainer
+        title={'节点分布与覆盖预览'}
+        extra={<Button onClick={refresh}>刷新</Button>}
+      >
+        <ProCard direction="row" ghost gutter={[10, 8]}>
+          <ProCard colSpan={5} bordered>
+            <Node />
+          </ProCard>
+          <ProCard bordered>
+            {/* <Alert
             message={
               <>
                 白色区域，为当前灵境云节点未覆盖地区
@@ -74,21 +89,18 @@ const Map: React.FC = () => {
             type="warning"
             closable
           /> */}
-          <div
-            style={{
-              height: ContainerHeight,
-            }}
-          >
-            <EMap
-              mapList={mapList}
-              nodeList={nodeList}
-              clickItem={clickItem}
-              hoverItem={hoverItem}
-            />
-          </div>
+            <div>
+              <EMap
+                mapList={mapList}
+                nodeList={nodeList}
+                clickItem={clickItem}
+                hoverItem={hoverItem}
+              />
+            </div>
+          </ProCard>
         </ProCard>
-      </ProCard>
-    </PageContainer>
+      </PageContainer>
+    </EdgeRoomProvider>
   );
 };
 

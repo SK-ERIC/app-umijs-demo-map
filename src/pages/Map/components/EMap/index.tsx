@@ -1,9 +1,14 @@
+import china_province_geo from '@/assets/china_province_geo.json';
+import { useEdgeRoomContext } from '@/contexts';
 import useECharts from '@/hooks/useECharts';
+import useFillScreen from '@/hooks/useFillScreen';
 import { useDebounceEffect, useReactive } from 'ahooks';
 import { Table, message } from 'antd';
 import * as echarts from 'echarts';
+import { groupBy } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { cityMapData } from '../../data';
+import { EdgeRoom } from '../../edgeRoom';
+import { lineToProvinceMap } from '../../edgeRoom/map';
 import { TMapData, TNodeInfo } from '../../type';
 import { COLOR, DEFAULT_OPTION } from './config';
 import styles from './index.less';
@@ -160,18 +165,51 @@ const formatNodeTooltip = (params: any) => {
 // 获取地理数据
 const getGeoJson = async (adcode = 100000) => {
   try {
-    const res = await fetch(
-      `https://geo.datav.aliyun.com/areas_v3/bound/${adcode}_full.json`,
-    );
-    const data = await res.json();
+    // const res = await fetch(
+    //   `https://geo.datav.aliyun.com/areas_v3/bound/${adcode}_full.json`,
+    // );
+    // const data = await res.json();
+    const data = china_province_geo;
     return data;
   } catch (error) {
     message.error('获取地理数据失败');
   }
 };
 
-// 处理节点数据 得到 series 中的 data、
-const getMapData = () => {};
+// 处理节点数据根据节点数据，得到地理数据
+const getMapData = (edgeRooms: EdgeRoom[]) => {
+  console.log('edgeRooms :>> ', edgeRooms);
+  // 数据分组 以 lineName 为 key
+  // const groupByLineName = groupBy(edgeRooms, 'lineName');
+  // const mapData = Object.keys(groupByLineName).map((lineName) => {
+  //   const provinceName = lineName.split('_').pop() || '';
+  //   const province = lineToProvinceMap[provinceName];
+  //   // 节点状态
+  //   // 是否全部不可用
+  //   const nodeState = groupByLineName[lineName].every(
+  //     (item) => !item.resolverEnable,
+  //   );
+
+  //   // 有机房，且所有节点不可用
+  //   if (groupByLineName[lineName].length > 0 && nodeState) {
+  //     return {
+  //       name: province,
+  //       value: 2,
+  //       edgeRooms: groupByLineName[lineName],
+  //     };
+  //   } else {
+  //     // 有机房，且有节点可用
+  //     return {
+  //       name: province,
+  //       value: 1,
+  //       edgeRooms: groupByLineName[lineName],
+  //     };
+  //   }
+  // });
+
+  // console.log('mapData :>> ', mapData);
+
+};
 
 const echartsMapClick = () => {};
 
@@ -186,9 +224,16 @@ const EMap = ({
   clickItem: string;
   hoverItem: string;
 }) => {
+  const { edgeRooms, activeEdgeRoom } = useEdgeRoomContext();
+
+  useEffect(() => {
+    message.info('activeEdgeRoom: ' + activeEdgeRoom);
+  }, [activeEdgeRoom]);
+
   const [ref, chart] = useECharts({
     options: DEFAULT_OPTION,
   });
+  const mapHeight = useFillScreen(ref, 600, 30);
 
   // 是否显示卡片提示
   const [showCardTip, setShowCardTip] = useState(false);
@@ -218,7 +263,10 @@ const EMap = ({
     const mapData = getProcessedMapData(mapList);
     mapListDataRef.current = mapData;
     const regions = getRegions(mapData);
-    console.log('mapData', mapData)
+    // console.log('mapData', mapData);
+
+    getMapData(edgeRooms);
+
     const nodeList = mapData.reduce((acc, cur) => acc.concat(cur.nodeInfo), []);
     // 获取series中的data数据，为所有节点的数据，value 为 【经度，纬度，状态】
     const seriesData = getSeriesData(nodeList);
@@ -231,89 +279,86 @@ const EMap = ({
 
     echarts.registerMap(mapName, json);
     if (chart) {
-      chart.setOption(
-        {
-          ...DEFAULT_OPTION,
-          geo: {
-            map: mapName,
-            // zoom: 1.1,
-            roam: true,
-            layoutSize: '100%',
-            layoutCenter: ['50%', '50%'],
-            itemStyle: {
-              areaColor: COLOR.AREA_NO_COVER,
-            },
-            regions: regions,
+      chart.setOption({
+        ...DEFAULT_OPTION,
+        geo: {
+          map: mapName,
+          // zoom: 1.1,
+          roam: true,
+          layoutSize: '100%',
+          layoutCenter: ['50%', '50%'],
+          itemStyle: {
+            areaColor: COLOR.AREA_NO_COVER,
           },
-
-          series: [
-            {
-              type: 'map',
-              name: mapName,
-              geoIndex: 0,
-              data: mapData,
-              selectedMode: 'multiple',
-              tooltip: {
-                formatter: formatAreaTooltip,
-              },
-            },
-            {
-              name: '可用节点',
-              type: 'effectScatter',
-              coordinateSystem: 'geo',
-              data: enableNodeData,
-              effectType: 'ripple',
-              showEffectOn: 'render',
-              rippleEffect: {
-                period: 10, // 动画的周期，秒数
-                scale: 10, // 动画中波纹的最大缩放比例
-                brushType: 'stroke', // 波纹的绘制方式，可选 'stroke' 和 'fill'
-              },
-              symbolSize: 2,
-              symbol: 'circle',
-              label: {
-                formatter: '{b}',
-                position: 'right',
-                show: true,
-                padding: [0, 0, 0, 5],
-              },
-              tooltip: {
-                formatter: formatNodeTooltip,
-              },
-              emphasis: {
-                scale: 1.5,
-              },
-            },
-            {
-              name: '不可用节点',
-              type: 'effectScatter',
-              coordinateSystem: 'geo',
-              data: disableNodeData,
-              effectType: 'ripple',
-              showEffectOn: 'render',
-              rippleEffect: {
-                period: 1, // 动画的周期，秒数
-                scale: 20, // 动画中波纹的最大缩放比例
-                brushType: 'stroke', // 波纹的绘制方式，可选 'stroke' 和 'fill'
-              },
-              symbolSize: 6,
-              symbol: 'circle',
-              label: {
-                formatter: '{b}',
-                position: 'right',
-                show: true,
-              },
-              tooltip: {
-                formatter: formatNodeTooltip,
-              },
-              emphasis: {
-                scale: 1.5,
-              },
-            },
-          ],
+          regions: regions,
         },
-        true,
-      );
+
+        series: [
+          {
+            type: 'map',
+            name: mapName,
+            geoIndex: 0,
+            data: mapData,
+            selectedMode: 'multiple',
+            tooltip: {
+              formatter: formatAreaTooltip,
+            },
+          },
+          {
+            name: '可用节点',
+            type: 'effectScatter',
+            coordinateSystem: 'geo',
+            data: enableNodeData,
+            effectType: 'ripple',
+            showEffectOn: 'render',
+            rippleEffect: {
+              period: 10, // 动画的周期，秒数
+              scale: 10, // 动画中波纹的最大缩放比例
+              brushType: 'stroke', // 波纹的绘制方式，可选 'stroke' 和 'fill'
+            },
+            symbolSize: 2,
+            symbol: 'circle',
+            label: {
+              formatter: '{b}',
+              position: 'right',
+              show: true,
+              padding: [0, 0, 0, 5],
+            },
+            tooltip: {
+              formatter: formatNodeTooltip,
+            },
+            emphasis: {
+              scale: 1.5,
+            },
+          },
+          {
+            name: '不可用节点',
+            type: 'effectScatter',
+            coordinateSystem: 'geo',
+            data: disableNodeData,
+            effectType: 'ripple',
+            showEffectOn: 'render',
+            rippleEffect: {
+              period: 1, // 动画的周期，秒数
+              scale: 20, // 动画中波纹的最大缩放比例
+              brushType: 'stroke', // 波纹的绘制方式，可选 'stroke' 和 'fill'
+            },
+            symbolSize: 6,
+            symbol: 'circle',
+            label: {
+              formatter: '{b}',
+              position: 'right',
+              show: true,
+            },
+            tooltip: {
+              formatter: formatNodeTooltip,
+            },
+            emphasis: {
+              scale: 1.5,
+            },
+          },
+        ],
+      });
     }
   };
 
@@ -334,14 +379,7 @@ const EMap = ({
   // echarts 点击事件
   const echartsMapClick = async (params: any) => {
     if (!chart) return;
-    if (params.data?.adcode) {
-      initEcharts(cityMapData, params.data.adcode, params.data.name);
-    }
-  };
-
-  // 双击事件
-  const onMapDblClick = (e) => {
-    initEcharts(mapList);
+    // TODO: 选中区域，显示区域的卡片
   };
 
   // getGetJson
@@ -533,11 +571,7 @@ const EMap = ({
 
   return (
     <div className={styles.map_wrapper}>
-      <div
-        style={{ width: '100%', height: '600px' }}
-        ref={ref}
-        onDoubleClick={onMapDblClick}
-      ></div>
+      <div style={{ width: '100%', height: mapHeight }} ref={ref}></div>
       <div
         className={styles.node_panel}
         style={{

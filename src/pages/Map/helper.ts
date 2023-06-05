@@ -94,3 +94,27 @@ export function searchNodeInfo<TNodeInfo>(
   };
   return nodeInfoList.filter(filterFunc);
 }
+
+// 带宽占比 = 当前带宽值 / 节点允许跑的最大带宽值 返回两种数据，一种是带宽百分数 (两位小数), 一种是带宽比值（四位小数）
+export const getBandwidthShare = (
+  bandwidth: number,
+  maxBandwidth: number,
+): {
+  share: number;
+  sharePercent: string;
+} => {
+  if (bandwidth === 0) {
+    return {
+      share: 0,
+      sharePercent: '0%',
+    };
+  }
+  const share = bandwidth / maxBandwidth;
+  const shareStr = +share.toFixed(2);
+  const sharePercent = +(share * 100).toFixed(2);
+
+  return {
+    share: shareStr,
+    sharePercent: `${sharePercent}%`,
+  };
+};
