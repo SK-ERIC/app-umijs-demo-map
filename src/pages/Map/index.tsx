@@ -5,21 +5,15 @@ import { Button, message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import EMap from './components/EMap';
 import Node from './components/Node';
-import { mapData } from './data';
 import { EdgeRoom, EdgeRoomService } from './edgeRoom';
-import { TMapData, TNodeInfo } from './type';
+import { TNodeInfo } from './type';
 
 // 中国节点地图
 const Map: React.FC = () => {
   const update = useUpdate();
 
-  const [mapList, setMapList] = useState<TMapData[]>(mapData);
-  const [nodeList, setNodeList] = useState<TNodeInfo[]>([]);
   // 使用 ref 存储 node 节点原始数据，为了方便后续的数据处理，如搜索排序等
   const nodeRef = React.useRef<TNodeInfo[]>([]);
-
-  const [clickItem, setClickItem] = useState('');
-  const [hoverItem, setHoverItem] = useState('');
 
   //
   //
@@ -32,7 +26,6 @@ const Map: React.FC = () => {
   const getEdgeRooms = async () => {
     const data = await EdgeRoomService.GetEdgeRooms();
     setEdgeRooms(data);
-    console.log('data :>> ', data);
   };
 
   useEffect(() => {
@@ -54,8 +47,6 @@ const Map: React.FC = () => {
   const refresh = () => {
     update();
     getEdgeRooms();
-    setClickItem('');
-    setHoverItem('');
     message.success('刷新成功');
   };
 
@@ -89,14 +80,7 @@ const Map: React.FC = () => {
             type="warning"
             closable
           /> */}
-            <div>
-              <EMap
-                mapList={mapList}
-                nodeList={nodeList}
-                clickItem={clickItem}
-                hoverItem={hoverItem}
-              />
-            </div>
+            <EMap />
           </ProCard>
         </ProCard>
       </PageContainer>

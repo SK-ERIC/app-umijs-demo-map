@@ -3,7 +3,7 @@ import { EdgeRoom } from '../../edgeRoom';
 import styles from './index.less';
 
 const PopoverContent = ({
-  node: { bandwidth, name, restrictedBandwidth },
+  node: { bandwidth, name, restrictedBandwidth, chineseName },
 }: {
   node: EdgeRoom;
 }) => {
@@ -25,7 +25,7 @@ const PopoverContent = ({
       />
       <div className={styles.item}>
         <div className={styles.label}>中文名称</div>
-        <div className={styles.value}>{name}</div>
+        <div className={styles.value}>{chineseName}</div>
       </div>
       <div className={styles.item}>
         <div className={styles.label}>ipV4</div>

@@ -43,13 +43,13 @@ export class EdgeRoomService {
     return Promise.resolve([
       {
         name: 'qd-hongdao-1',
-        chineseName: '青岛红岛',
+        chineseName: '青岛红岛1',
         autoAdjustBandwidth: false,
         autoSwitchResolver: false,
         bandwidth: 300000000000,
         lineName: 'cn_mobile_shandong',
-        latitude: '3',
-        longitude: '1',
+        longitude:  '117.82',
+        latitude: '36.86',
         lines: [
           'cn_mobile_shandong',
           'cn_mobile_neimenggu',
@@ -62,7 +62,7 @@ export class EdgeRoomService {
         ],
         nodePrefix: 'qd-hongdao-',
         priority: 10,
-        resolverEnable: true,
+        resolverEnable: false,
         restrictedBandwidth: 300000000000,
         vips: [
           {
@@ -118,7 +118,7 @@ export class EdgeRoomService {
       },
       {
         name: 'qd-hongdao-2',
-        chineseName: '青岛红岛',
+        chineseName: '青岛红岛2',
         autoAdjustBandwidth: false,
         autoSwitchResolver: false,
         bandwidth: 300000000000,

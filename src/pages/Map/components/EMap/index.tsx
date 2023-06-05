@@ -2,14 +2,17 @@ import china_province_geo from '@/assets/china_province_geo.json';
 import { useEdgeRoomContext } from '@/contexts';
 import useECharts from '@/hooks/useECharts';
 import useFillScreen from '@/hooks/useFillScreen';
-import { useDebounceEffect, useReactive } from 'ahooks';
+import {
+  useAsyncEffect,
+  useDebounceEffect,
+  useDeepCompareEffect,
+  useReactive,
+} from 'ahooks';
 import { Table, message } from 'antd';
 import * as echarts from 'echarts';
-import { groupBy } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { EdgeRoom } from '../../edgeRoom';
-import { lineToProvinceMap } from '../../edgeRoom/map';
-import { TMapData, TNodeInfo } from '../../type';
+import { lineToProvinceMap, provinceToLineMap } from '../../edgeRoom/map';
 import { COLOR, DEFAULT_OPTION } from './config';
 import styles from './index.less';
 
@@ -20,116 +23,53 @@ const enum ShowCardSource {
   NODE,
 }
 
-// 处理地图背景根据节点的带宽占比变化及节点状态，输出 geo 中的 regions
-const getRegions = (mapList: TMapData[]) => {
-  const regions: any[] = [];
-  mapList.forEach((item) => {
-    // 先判别是否有节点信息，以及所有节点是否都可用
-    const hasNode = item.nodeInfo.length > 0;
-    const allNodeEnable = item.nodeInfo.every((node) => node.state === 1);
-    if (hasNode && !allNodeEnable) {
-      regions.push({
-        name: item.name,
-        itemStyle: {
-          areaColor: COLOR.AREA_DISABLE,
-        },
-      });
-    } else if (hasNode) {
-      // 判断有节点，且有节点可用
-      regions.push({
-        name: item.name,
-        itemStyle: {
-          areaColor: COLOR.AREA_ENABLE,
-        },
-      });
-    } else {
-      regions.push({
-        name: item.name,
-        itemStyle: {
-          areaColor: COLOR.AREA_NO_COVER,
-        },
-      });
-    }
-  });
-
-  return regions;
-};
-
-// 预处理地图数据中的 value ,让其根据节点中的状态相关联
-// 0：无机房，1：有机房，且有节点可用，2：有机房，但所有节点不可用
-const getProcessedMapData = (mapList: TMapData[]): TMapData[] => {
-  const mapData: TMapData[] = [];
-  mapList.forEach((item) => {
-    const hasNode = item.nodeInfo.length > 0;
-    const allNodeEnable = item.nodeInfo.every((node) => node.state === 1);
-    if (hasNode && !allNodeEnable) {
-      mapData.push({
-        ...item,
-        value: 2,
-      });
-    } else if (hasNode) {
-      mapData.push({
-        ...item,
-        value: 1,
-      });
-    } else {
-      mapData.push({
-        ...item,
-        value: 0,
-      });
-    }
-  });
-
-  return mapData;
-};
-
-// 获取series中的data数据，为所有节点的数据，value 为 【经度，纬度，状态】
-const getSeriesData = (nodeList: TNodeInfo[]) => {
-  const seriesData: any[] = [];
-  nodeList.forEach((node) => {
-    seriesData.push({
-      name: node.name,
-      value: [...node.coords, node.state === 1 ? 3 : 4],
-      info: node,
-    });
-  });
-
-  return seriesData;
-};
-
 // 处理获取区域的 tooltip
 const formatAreaTooltip = (params: any) => {
-  const data = params.data as TMapData;
-  const { name, nodeInfo } = data || {};
-  if (!name) return;
+  const data = params.data as {
+    name: string;
+    value: number;
+    edgeRooms: EdgeRoom[];
+  };
+  if (!data) return null;
+  const { name, edgeRooms } = data;
 
-  const hasNode = nodeInfo.length > 0;
+  const cn_name = provinceToLineMap[name];
+
+  const hasNode = edgeRooms.length > 0;
   let str = '';
 
   // 渲染出每个节点的信息，使用table渲染，表格thead为： 覆盖区域的节点、区域带宽、节点状态
   if (hasNode) {
-    const body = nodeInfo.map((node) => {
+    const body = edgeRooms.map((node) => {
+      // 节点在该区域的带宽
+      const bandwidth = node.status.lines.find(
+        (line) => line.name?.split('_').pop() === cn_name,
+      )?.bandwidth;
+
       return `<tr>
       <td>
-      <span style="display: inline-block; margin-right: 5px; border-radius: 50%; width: 10px; height: 10px; background-color: ${
-        node.state === 1 ? COLOR.NODE_ENABLE : COLOR.NODE_DISABLE
+      <span style="display: inline-block; margin-right: 4px; border-radius: 50%; width: 10px; height: 10px; background-color: ${
+        node.resolverEnable ? COLOR.NODE_ENABLE : COLOR.NODE_DISABLE
       }"></span>
-      ${node.title}
+      ${node.chineseName}
       </td>
-      <td>${node.bandwidth}Mbps</td>
+      <td>${bandwidth}</td>
     </tr>
     `;
     });
 
     // 总计
-    const total = nodeInfo.reduce((acc, cur) => {
-      return acc + cur.bandwidth;
+    const total = edgeRooms.reduce((acc, cur) => {
+      const bandwidth = cur.status.lines.find(
+        (line) => line.name?.split('_').pop() === cn_name,
+      )?.bandwidth;
+      return acc + bandwidth;
     }, 0);
 
     // 表格最后一行，显示总计
     body.push(`<tr>
                 <td>区域带宽总量</td>
-                <td>${total}Mbps</td>
+                <td>${total}</td>
               </tr>`);
 
     str = `<table>
@@ -159,7 +99,14 @@ const formatAreaTooltip = (params: any) => {
 
 // 处理节点的 tooltip
 const formatNodeTooltip = (params: any) => {
-  const data = params.data.info as TNodeInfo;
+  const data = params.data.edgeRoom as EdgeRoom;
+  if (!data) return null;
+  const { resolverEnable, chineseName } = data;
+
+  return `<span style="display: inline-block; margin-right: 4px; border-radius: 50%; width: 10px; height: 10px; background-color: ${
+    resolverEnable ? COLOR.NODE_ENABLE : COLOR.NODE_DISABLE
+  }"></span>
+  ${chineseName}`;
 };
 
 // 获取地理数据
@@ -176,81 +123,99 @@ const getGeoJson = async (adcode = 100000) => {
   }
 };
 
-// 处理节点数据根据节点数据，得到地理数据
-const getMapData = (edgeRooms: EdgeRoom[]) => {
-  console.log('edgeRooms :>> ', edgeRooms);
-
-  const map = new Map();
+const getProvinceEdgeRoomMap = (edgeRooms: EdgeRoom[]) => {
+  const provinceEdgeRoomMap = new Map<string, EdgeRoom[]>();
 
   edgeRooms.forEach((edgeRoom) => {
     const { lines } = edgeRoom;
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
+      const province = line.split('_').pop() || '';
+      const provinceName = lineToProvinceMap[province];
 
-      if (map.has(line)) {
-        const value = map.get(line);
-        map.set(line, [...value, edgeRoom]);
+      if (provinceEdgeRoomMap.has(provinceName)) {
+        const value = provinceEdgeRoomMap.get(provinceName);
+        provinceEdgeRoomMap.set(provinceName, [...value!, edgeRoom]);
       } else {
-        map.set(line, [edgeRoom]);
+        provinceEdgeRoomMap.set(provinceName, [edgeRoom]);
       }
-    })
-  })
+    });
+  });
 
-  console.log('map :>> ', map.entries());
-
-
-
-
-  // 数据分组 以 lineName 为 key
-  // const groupByLineName = groupBy(edgeRooms, 'lineName');
-  // const mapData = Object.keys(groupByLineName).map((lineName) => {
-  //   const provinceName = lineName.split('_').pop() || '';
-  //   const province = lineToProvinceMap[provinceName];
-  //   // 节点状态
-  //   // 是否全部不可用
-  //   const nodeState = groupByLineName[lineName].every(
-  //     (item) => !item.resolverEnable,
-  //   );
-
-  //   // 有机房，且所有节点不可用
-  //   if (groupByLineName[lineName].length > 0 && nodeState) {
-  //     return {
-  //       name: province,
-  //       value: 2,
-  //       edgeRooms: groupByLineName[lineName],
-  //     };
-  //   } else {
-  //     // 有机房，且有节点可用
-  //     return {
-  //       name: province,
-  //       value: 1,
-  //       edgeRooms: groupByLineName[lineName],
-  //     };
-  //   }
-  // });
-
-  // console.log('mapData :>> ', mapData);
-
+  return provinceEdgeRoomMap;
 };
 
-const echartsMapClick = () => {};
+// 处理节点数据根据节点数据，得到地理数据
+const getRegions = (edgeRooms: EdgeRoom[]) => {
+  const provinceEdgeRoomMap = getProvinceEdgeRoomMap(edgeRooms);
 
-const EMap = ({
-  mapList,
-  nodeList,
-  clickItem,
-  hoverItem,
-}: {
-  mapList: TMapData[];
-  nodeList: TNodeInfo[];
-  clickItem: string;
-  hoverItem: string;
-}) => {
+  const regions: any = [];
+  provinceEdgeRoomMap.forEach((value, key) => {
+    // 是否所有机房都不可用
+    const allEdgeRoomDisable = value.every((item) => !item.resolverEnable);
+    if (allEdgeRoomDisable) {
+      regions.push({
+        name: key,
+        edgeRooms: value,
+        itemStyle: {
+          areaColor: COLOR.AREA_DISABLE,
+        },
+      });
+    } else {
+      regions.push({
+        name: key,
+        edgeRooms: value,
+        itemStyle: {
+          areaColor: COLOR.AREA_ENABLE,
+        },
+      });
+    }
+  });
+  return regions;
+};
+
+// 0：无机房，1：有机房，且有节点可用，2：有机房，但所有节点不可用
+const getMapData = (edgeRooms: EdgeRoom[]) => {
+  const provinceEdgeRoomMap = getProvinceEdgeRoomMap(edgeRooms);
+  const mapList: any[] = [];
+  provinceEdgeRoomMap.forEach((value, key) => {
+    // 是否所有机房都不可用
+    const allEdgeRoomDisable = value.every((item) => !item.resolverEnable);
+    if (allEdgeRoomDisable) {
+      mapList.push({
+        name: key,
+        value: 2,
+        edgeRooms: value,
+      });
+    } else {
+      mapList.push({
+        name: key,
+        edgeRooms: value,
+        value: 1,
+      });
+    }
+  });
+  return mapList;
+};
+
+// getSeriesData
+const getSeriesData = (edgeRooms: EdgeRoom[]) => {
+  const seriesList: any[] = [];
+  edgeRooms.forEach((edgeRoom) => {
+    const { longitude, latitude, resolverEnable, chineseName } = edgeRoom;
+
+    seriesList.push({
+      name: chineseName,
+      value: [longitude, latitude, resolverEnable ? 3 : 4],
+      edgeRoom: edgeRoom,
+    });
+  });
+
+  return seriesList;
+};
+
+const EMap = () => {
   const { edgeRooms, activeEdgeRoom } = useEdgeRoomContext();
-
-  useEffect(() => {
-    message.info('activeEdgeRoom: ' + activeEdgeRoom);
-  }, [activeEdgeRoom]);
 
   const [ref, chart] = useECharts({
     options: DEFAULT_OPTION,
@@ -259,39 +224,16 @@ const EMap = ({
 
   // 是否显示卡片提示
   const [showCardTip, setShowCardTip] = useState(false);
-  // 地图数据
-  const mapListDataRef = useRef<TMapData[]>([]);
   // 显示卡片的来源, 1: 区域，2：节点
   const [cardSource, setCardSource] = useState<ShowCardSource>(
     ShowCardSource.NODE,
   );
-  // 选中的节点或区域
-  const selectedData = useReactive<{
-    type: ShowCardSource;
-    data: TMapData | TNodeInfo | null;
-  }>({
-    type: ShowCardSource.NODE,
-    data: null,
-  });
 
-  const initEcharts = async (
-    mapList: TMapData[],
-    adcode = 100000,
-    mapName = 'china',
-  ) => {
-    // 根据mapList中的数据，设置地图；
-    // 1. 地图上区域的颜色
-    // 2. 地图上节点标记的位置及颜色
-    const mapData = getProcessedMapData(mapList);
-    mapListDataRef.current = mapData;
-    const regions = getRegions(mapData);
-    // console.log('mapData', mapData);
+  const initEcharts = async (adcode = 100000, mapName = 'china') => {
+    const mapData = getMapData(edgeRooms);
+    const regions = getRegions(edgeRooms);
+    const seriesData = getSeriesData(edgeRooms);
 
-    getMapData(edgeRooms);
-
-    const nodeList = mapData.reduce((acc, cur) => acc.concat(cur.nodeInfo), []);
-    // 获取series中的data数据，为所有节点的数据，value 为 【经度，纬度，状态】
-    const seriesData = getSeriesData(nodeList);
     // 可用节点数据
     const enableNodeData = seriesData.filter((item) => item.value[2] === 3);
     // 不可用节点数据
@@ -314,7 +256,6 @@ const EMap = ({
           },
           regions: regions,
         },
-
         series: [
           {
             type: 'map',
@@ -390,40 +331,20 @@ const EMap = ({
   // 记录历史选中的区域，为了动态派发取消选中的事件
   const selectedHistory = useRef<any>(null);
 
-  // 此为初始状态下，根绝node
-  useEffect(() => {
+  useAsyncEffect(async () => {
     if (!chart) return;
-    (async () => {
-      await initEcharts(mapList);
-    })();
+    await initEcharts();
   }, [chart]);
-
-  // echarts 点击事件
-  const echartsMapClick = async (params: any) => {
-    if (!chart) return;
-    // TODO: 选中区域，显示区域的卡片
-  };
-
-  // getGetJson
-  // getMapData
-  // initEcharts
-  // echartsMapClick
 
   // 注册事件
   useEffect(() => {
     if (!chart) return;
 
-    chart.off('click');
-    chart.on('click', echartsMapClick);
-
-    chart.on('dblclick', () => {
-      message.info('用户双击了地图');
-    });
-
     // 监听选中区域的事件
     chart.off('selectchanged');
     chart.on('selectchanged', function (params) {
       if (params.fromAction === 'select') {
+        console.log('params :>> ', params);
         selectedHistory.current = {
           index: params.fromActionPayload.dataIndexInside,
           name: params.fromActionPayload.name,
@@ -449,61 +370,37 @@ const EMap = ({
     }
   };
 
-  // 监听列表点击事件，选中区域
-  useEffect(() => {
+  // 监听列表click\hover事件，选中区域
+  useDeepCompareEffect(() => {
     if (!chart) return;
-    // 查找到该节点的数据
-    const nodeData = nodeList.find((item) => item.title === clickItem);
+    clearSelectedArea(chart);
 
-    if (clickItem) {
-      // 先清除上一次选中的区域
-      clearSelectedArea(chart);
+    if (activeEdgeRoom) {
+      const { lines } = activeEdgeRoom;
+      const areas = lines.map((item) => {
+        const province = item.split('_').pop();
+        return lineToProvinceMap[province];
+      });
+
       // 1. 设置选中的区域
       chart.dispatchAction({
         type: 'select',
-        name: nodeData?.coverArea,
+        name: areas,
       });
-    } else {
-      clearSelectedArea(chart);
     }
-  }, [clickItem]);
-
-  // 监听列表hover事件，选中区域
-  useDebounceEffect(
-    () => {
-      if (!chart || clickItem) return;
-      // 查找到该节点的数据
-      const nodeData = nodeList.find((item) => item.title === hoverItem);
-
-      if (hoverItem) {
-        // 先清除上一次选中的区域
-        clearSelectedArea(chart);
-        // 1. 设置选中的区域
-        chart.dispatchAction({
-          type: 'select',
-          name: nodeData?.coverArea,
-        });
-      } else {
-        clearSelectedArea(chart);
-      }
-    },
-    [hoverItem],
-    {
-      wait: 100,
-    },
-  );
+  }, [chart, activeEdgeRoom]);
 
   // 监听处理信息展示卡片，hover 或 click
   useDebounceEffect(
     () => {
-      if (hoverItem || clickItem) {
+      if (activeEdgeRoom) {
         setShowCardTip(true);
         setCardSource(ShowCardSource.NODE);
       } else {
         setShowCardTip(false);
       }
     },
-    [hoverItem, clickItem],
+    [activeEdgeRoom],
     {
       wait: 100,
     },
@@ -519,27 +416,21 @@ const EMap = ({
 
   // 设置节点card显示数据
   const setNodeCardData = () => {
-    const nodeData = nodeList.find((item) =>
-      [clickItem, hoverItem].includes(item.title),
-    );
-    // 得到该节点覆盖的区域名称
-    const { coverArea } = nodeData || { coverArea: [] };
-    // 通过区域名称查找到该区域该节点的带宽
-    const areaData = coverArea.map((item, i) => {
-      // 找到该区域
-      const area = mapListDataRef.current.find((area) => area.name === item);
-      // 找到该节点
-      const node = area?.nodeInfo.find((node) =>
-        [clickItem, hoverItem].includes(node.title),
-      );
+    if (!activeEdgeRoom) return;
+    const { lines, status } = activeEdgeRoom;
+
+    if (!lines || lines.length === 0) return;
+
+    cardTable.dataSource = status.lines.map((item) => {
+      const province = item.name.split('_').pop();
+      const areaName = lineToProvinceMap[province];
 
       return {
-        key: i + '-area',
-        name: item,
-        value: node?.bandwidth,
+        key: item.name,
+        name: areaName,
+        value: item.bandwidth,
       };
     });
-    cardTable.dataSource = areaData;
 
     cardTable.columns = [
       {
@@ -562,30 +453,10 @@ const EMap = ({
         // 1. 区域被选中,覆盖区域的节点及区域带宽
       } else {
         // 2. 节点被选中,显示该节点覆盖的地区名称及地区在该节点带宽
-        // 如果 click 有值，优先显示 click 的数据，不触发 hover 的数据显示
         setNodeCardData();
       }
     },
-    [showCardTip, cardSource, clickItem],
-    {
-      wait: 100,
-    },
-  );
-
-  // 处理卡片的显示数据
-  useDebounceEffect(
-    () => {
-      if (!showCardTip || clickItem) return;
-      // 显示数据
-      if (cardSource === ShowCardSource.AREA) {
-        // 1. 区域被选中,覆盖区域的节点及区域带宽
-      } else {
-        // 2. 节点被选中,显示该节点覆盖的地区名称及地区在该节点带宽
-        // 如果 click 有值，优先显示 click 的数据，不触发 hover 的数据显示
-        setNodeCardData();
-      }
-    },
-    [showCardTip, cardSource, clickItem, hoverItem],
+    [showCardTip, cardSource, activeEdgeRoom],
     {
       wait: 100,
     },
